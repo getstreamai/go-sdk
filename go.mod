@@ -1,3 +1,3 @@
-module github.com/hkirat/stream-go
+module github.com/getstreamai/go-sdk
 
 go 1.16
