@@ -13,10 +13,10 @@ import (
 type RequestBody struct {
 	AccessKey    string      `json:"accessKey"`
 	AccessSecret string      `json:"accessSecret"`
-	Data         requestData `json:"data"`
+	Data         RequestData `json:"data"`
 }
 
-type requestData struct {
+type RequestData struct {
 	Name   string `json:"name"`
 	Room   string `json:"room"`
 	Type   string `json:"type"`
