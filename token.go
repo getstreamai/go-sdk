@@ -52,6 +52,8 @@ func GenerateToken(r *RequestBody) (string, error) {
 	}
 
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonValue))
+	request.Header.Add("Content-Type", "application/json")
+
 	if err != nil {
 		return "", err
 	}
