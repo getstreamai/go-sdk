@@ -3,10 +3,9 @@ package token
 import (
 	"bytes"
 	"encoding/json"
-	"io"
+	"errors"
 	"log"
 	"net/http"
-	"os"
 )
 
 // RequestBody Input to the request token function
@@ -27,6 +26,22 @@ type responseBody struct {
 	Token string `json:"token"`
 }
 
+type errorResponseBody struct {
+	Message string `json:"msg"`
+}
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+var (
+	Client HttpClient
+)
+
+func init() {
+	Client = &http.Client{}
+}
+
 const url = "https://token.acadcare.com/api/token"
 
 // GenerateToken Function to generate token
@@ -35,18 +50,30 @@ func GenerateToken(r *RequestBody) (string, error) {
 	if err != nil {
 		log.Fatal("Error while decoding json request object")
 	}
-	res, e := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
 
-	if e != nil {
-		log.Fatal("Error while sending out request to Stream")
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return "", err
 	}
+	res, e := Client.Do(request)
+
+	if e != nil || res.StatusCode == http.StatusForbidden {
+		decoder := json.NewDecoder(res.Body)
+		var response errorResponseBody
+		decodeErr := decoder.Decode(&response)
+		if decodeErr != nil {
+			return "", errors.New("Error while fetching response from server")
+		}
+		return "", errors.New(response.Message)
+	}
+
 	decoder := json.NewDecoder(res.Body)
 	var response responseBody
 	decodeErr := decoder.Decode(&response)
 	if decodeErr != nil {
-		log.Fatal("Error while decoding response")
+		return "", errors.New("Error while decoding response")
 	}
-	io.Copy(os.Stdout, res.Body)
+
 	defer res.Body.Close()
 	return response.Token, nil
 }
